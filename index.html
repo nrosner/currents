@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hudson Current Predictions</title>
+    <style>
+        /* Color Palette */
+        :root {
+            --ocean-blue-1: #2c5aa0;
+            --ocean-blue-2: #4f94cd;
+            --ocean-blue-3: #1565c0;
+            --ocean-blue-4: #1e3a8a;
+            --sea-green-1: #5d8a66;
+            --sea-green-2: #2e5930;
+            --sea-green-3: #2e7d32;
+            --sea-green-4: #1a3e1c;
+            --light-blue-1: #e8f4f8;
+            --light-blue-2: #d1e7dd;
+            --light-blue-3: #f0f9ff;
+            --light-blue-4: #e1f5fe;
+            --light-blue-5: #b8e6ff;
+            --gray-1: #5a6c7d;
+            --gray-2: #b0bec5;
+        }
+
+        /* Base Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(to bottom right, var(--light-blue-1), var(--light-blue-4));
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            border: 1px solid var(--light-blue-5);
+        }
+
+        h1 {
+            color: var(--ocean-blue-1);
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: var(--gray-1);
+            text-align: center;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        a {
+            color: var(--ocean-blue-3);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        a:hover {
+            color: var(--ocean-blue-1);
+            text-decoration: underline;
+        }
+
+        /* Form Controls */
+        .controls {
+            background-color: var(--light-blue-3);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+
+        .mode-selection {
+            margin-bottom: 15px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: inline-block;
+            margin-right: 10px;
+            font-weight: 500;
+        }
+
+        input[type="number"],
+        input[type="date"] {
+            padding: 8px 12px;
+            border: 1px solid var(--gray-2);
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .primary-btn {
+            background: linear-gradient(to bottom, var(--ocean-blue-2), var(--ocean-blue-1));
+            color: white;
+        }
+
+        .primary-btn:hover {
+            background: linear-gradient(to bottom, var(--ocean-blue-1), var(--ocean-blue-4));
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .secondary-btn {
+            background: linear-gradient(to bottom, var(--sea-green-1), var(--sea-green-3));
+            color: white;
+        }
+
+        .secondary-btn:hover {
+            background: linear-gradient(to bottom, var(--sea-green-3), var(--sea-green-4));
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        button:disabled {
+            background: var(--gray-2);
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* Table Styles */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            background: linear-gradient(to right, var(--ocean-blue-1), var(--ocean-blue-3));
+            color: white;
+        }
+
+        th {
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: var(--light-blue-3);
+        }
+
+        tbody tr:nth-child(odd) {
+            background-color: white;
+        }
+
+        tbody tr:hover {
+            background-color: var(--light-blue-5);
+        }
+
+        td {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--light-blue-2);
+        }
+
+        .high-tide {
+            color: var(--ocean-blue-1);
+            font-weight: 500;
+        }
+
+        .low-tide {
+            color: var(--sea-green-1);
+            font-weight: 500;
+        }
+
+        .flood-current {
+            color: var(--ocean-blue-3);
+            font-weight: 500;
+        }
+
+        .ebb-current {
+            color: var(--sea-green-3);
+            font-weight: 500;
+        }
+        
+        /* Arrow visualization styles */
+        .arrow-viz {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .arrow {
+            font-size: 18px;
+            margin: 0 1px;
+        }
+        
+        .arrow-up {
+            color: var(--ocean-blue-3);
+        }
+        
+        .arrow-down {
+            color: var(--sea-green-3);
+        }
+
+        /* Status Messages */
+        .status {
+            text-align: center;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+
+        .loading {
+            background-color: var(--light-blue-4);
+            color: var(--ocean-blue-4);
+        }
+
+        .error {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hudson Current Predictions</h1>
+        <div class="subtitle">
+            <p>Approximate Hudson current speed near midtown Manhattan.</p>
+            <p>Based on the previous tide per <a href="https://api.tidesandcurrents.noaa.gov/api/prod/datagetter" target="_blank" id="noaa-link">NOAA Tide Predictions API</a> for The Battery, NY.</p>
+        </div>
+
+        <div class="controls">
+            <div class="mode-selection">
+                <input type="radio" id="next-days" name="mode" value="nextDays" checked>
+                <label for="next-days">Next N days</label>
+                
+                <input type="radio" id="date-range" name="mode" value="dateRange">
+                <label for="date-range">Date range (from/to)</label>
+            </div>
+            
+            <div class="input-group" id="next-days-input">
+                <label for="days">Number of days:</label>
+                <input type="number" id="days" min="1" max="31" value="3">
+            </div>
+            
+            <div class="input-group" id="date-range-input" style="display: none;">
+                <label for="start-date">From:</label>
+                <input type="date" id="start-date">
+                
+                <label for="end-date">To:</label>
+                <input type="date" id="end-date">
+            </div>
+            
+            <div class="button-group">
+                <button id="fetch-btn" class="primary-btn">Get Data</button>
+                <button id="export-btn" class="secondary-btn" disabled>Export to CSV</button>
+            </div>
+        </div>
+        
+        <div id="status" class="status loading" style="display: none;"></div>
+        
+        <div class="table-container">
+            <table id="predictions-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Tide</th>
+                        <th>Direction of current</th>
+                        <th>Speed (kts)</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="predictions-body">
+                    <!-- Data will be inserted here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const modeRadios = document.querySelectorAll('input[name="mode"]');
+        const nextDaysInput = document.getElementById('next-days-input');
+        const dateRangeInput = document.getElementById('date-range-input');
+        const daysInput = document.getElementById('days');
+        const startDateInput = document.getElementById('start-date');
+        const endDateInput = document.getElementById('end-date');
+        const fetchBtn = document.getElementById('fetch-btn');
+        const exportBtn = document.getElementById('export-btn');
+        const statusDiv = document.getElementById('status');
+        const predictionsBody = document.getElementById('predictions-body');
+        const noaaLink = document.getElementById('noaa-link');
+        
+        // Current data storage
+        let currentData = [];
+        let csvData = [];
+        
+        // Constants for current predictions
+        const HIGH_TIDE_CURRENTS = [
+            { hours: 0, direction: 'FLOOD', speed: 1.9 },
+            { hours: 1, direction: 'FLOOD', speed: 1.8 },
+            { hours: 2, direction: 'FLOOD', speed: 0.9 },
+            { hours: 3, direction: 'EBB', speed: 0.1 },
+            { hours: 4, direction: 'EBB', speed: 1.3 },
+            { hours: 5, direction: 'EBB', speed: 2.2 }
+        ];
+        
+        const LOW_TIDE_CURRENTS = [
+            { hours: 0, direction: 'EBB', speed: 2.8 },
+            { hours: 1, direction: 'EBB', speed: 2.6 },
+            { hours: 2, direction: 'EBB', speed: 1.9 },
+            { hours: 3, direction: 'EBB', speed: 1.0 },
+            { hours: 4, direction: 'FLOOD', speed: 0.3 },
+            { hours: 5, direction: 'FLOOD', speed: 1.3 }
+        ];
+        
+        // Initialize date inputs with today's date
+        function initializeDates() {
+            const today = new Date();
+            const todayStr = formatDateForInput(today);
+            
+            startDateInput.value = todayStr;
+            endDateInput.value = todayStr;
+        }
+        
+        // Format date for input fields (YYYY-MM-DD)
+        function formatDateForInput(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        
+        // Generate arrow visualization based on current speed and direction
+        function generateArrows(speed, direction) {
+            // Convert speed to a number
+            const speedNum = parseFloat(speed);
+            
+            // Calculate number of arrows (0-5)
+            let arrowCount = 0;
+            
+            if (speedNum < 0.1) {
+                arrowCount = 0;
+            } else if (speedNum < 0.5) {
+                arrowCount = 1;
+            } else if (speedNum >= 2.5) {
+                arrowCount = 5;
+            } else {
+                // Interpolate between 1-5 arrows for speeds 0.5-2.5
+                // Map 0.5-2.5 range to 1-5 range
+                arrowCount = Math.round(1 + (speedNum - 0.5) * (4 / 2.0));
+            }
+            
+            // Create arrow elements
+            const isFlood = direction === 'FLOOD';
+            const arrowChar = isFlood ? '▲' : '▼';
+            const arrowClass = isFlood ? 'arrow-up' : 'arrow-down';
+            
+            let arrowsHtml = '';
+            for (let i = 0; i < arrowCount; i++) {
+                arrowsHtml += `<span class="arrow ${arrowClass}">${arrowChar}</span>`;
+            }
+            
+            return arrowsHtml;
+        }
+        
+        // Format date for display (YYYY-MM-DD)
+        function formatDateForDisplay(dateStr) {
+            return dateStr;
+        }
+        
+        // Format time for display (HH:MM)
+        function formatTimeForDisplay(timeStr) {
+            return timeStr.substring(0, 5);
+        }
+        
+        // Toggle between input modes
+        function toggleInputMode() {
+            if (document.getElementById('next-days').checked) {
+                nextDaysInput.style.display = 'block';
+                dateRangeInput.style.display = 'none';
+            } else {
+                nextDaysInput.style.display = 'none';
+                dateRangeInput.style.display = 'block';
+            }
+        }
+        
+        // Build NOAA API URL based on selected parameters
+        function buildApiUrl() {
+            const baseUrl = 'https://api.tidesandcurrents.noaa.gov/api/prod/datagetter';
+            const params = new URLSearchParams({
+                product: 'predictions',
+                station: '8518750',
+                datum: 'MLLW',
+                time_zone: 'lst_ldt',
+                units: 'english',
+                interval: 'hilo',
+                format: 'json',
+                application: 'NOS.COOPS.TAC.TidePred'
+            });
+            
+            // Add date parameters based on selected mode
+            if (document.getElementById('next-days').checked) {
+                const days = parseInt(daysInput.value) || 3;
+                params.append('range', 24 * days);
+            } else {
+                const startDate = startDateInput.value;
+                const endDate = endDateInput.value;
+                params.append('begin_date', startDate.replace(/-/g, ''));
+                params.append('end_date', endDate.replace(/-/g, ''));
+            }
+            
+            return `${baseUrl}?${params.toString()}`;
+        }
+        
+        // Update the NOAA API link
+        function updateNoaaLink() {
+            const apiUrl = buildApiUrl();
+            noaaLink.href = apiUrl;
+        }
+        
+        // Add hours to a date/time string
+        function addHours(dateTimeStr, hoursToAdd) {
+            const [dateStr, timeStr] = dateTimeStr.split(' ');
+            const [year, month, day] = dateStr.split('-').map(Number);
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            
+            const date = new Date(year, month - 1, day, hours, minutes);
+            date.setHours(date.getHours() + hoursToAdd);
+            
+            const newYear = date.getFullYear();
+            const newMonth = String(date.getMonth() + 1).padStart(2, '0');
+            const newDay = String(date.getDate()).padStart(2, '0');
+            const newHours = String(date.getHours()).padStart(2, '0');
+            const newMinutes = String(date.getMinutes()).padStart(2, '0');
+            
+            return {
+                dateStr: `${newYear}-${newMonth}-${newDay}`,
+                timeStr: `${newHours}:${newMinutes}`,
+                fullDateTime: `${newYear}-${newMonth}-${newDay} ${newHours}:${newMinutes}`
+            };
+        }
+        
+        // Process tide data and generate current predictions
+        function processTideData(tideData) {
+            if (!tideData || !tideData.predictions || tideData.predictions.length === 0) {
+                throw new Error('No tide prediction data available');
+            }
+            
+            const processedData = [];
+            const csvRows = ['Date,Time,Tide,CurrentDirection,CurrentSpeed'];
+            
+            tideData.predictions.forEach(prediction => {
+                const tideType = prediction.type;
+                const dateTime = `${prediction.t.split(' ')[0]} ${prediction.t.split(' ')[1]}`;
+                const currents = tideType === 'H' ? HIGH_TIDE_CURRENTS : LOW_TIDE_CURRENTS;
+                
+                currents.forEach(current => {
+                    const { dateStr, timeStr } = addHours(dateTime, current.hours);
+                    const tideLabel = `${tideType === 'H' ? 'HIGH' : 'LOW'}${current.hours > 0 ? '+' + current.hours : ''}`;
+                    
+                    const row = {
+                        date: dateStr,
+                        time: timeStr,
+                        tide: tideLabel,
+                        direction: current.direction,
+                        speed: current.speed.toFixed(1)
+                    };
+                    
+                    processedData.push(row);
+                    csvRows.push(`${row.date},${row.time},${row.tide},${row.direction},${row.speed}`);
+                });
+            });
+            
+            return { tableData: processedData, csvData: csvRows.join('\n') };
+        }
+        
+        // Render the table with prediction data
+        function renderTable(data) {
+            predictionsBody.innerHTML = '';
+            
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                
+                const dateCell = document.createElement('td');
+                dateCell.textContent = formatDateForDisplay(row.date);
+                tr.appendChild(dateCell);
+                
+                const timeCell = document.createElement('td');
+                timeCell.textContent = formatTimeForDisplay(row.time);
+                tr.appendChild(timeCell);
+                
+                const tideCell = document.createElement('td');
+                tideCell.textContent = row.tide;
+                tideCell.className = row.tide.startsWith('HIGH') ? 'high-tide' : 'low-tide';
+                tr.appendChild(tideCell);
+                
+                const directionCell = document.createElement('td');
+                directionCell.textContent = row.direction;
+                directionCell.className = row.direction === 'FLOOD' ? 'flood-current' : 'ebb-current';
+                tr.appendChild(directionCell);
+                
+                const speedCell = document.createElement('td');
+                speedCell.textContent = row.speed;
+                tr.appendChild(speedCell);
+                
+                // Add visualization cell with arrows
+                const vizCell = document.createElement('td');
+                vizCell.className = 'arrow-viz';
+                vizCell.innerHTML = generateArrows(row.speed, row.direction);
+                tr.appendChild(vizCell);
+                
+                predictionsBody.appendChild(tr);
+            });
+        }
+        
+        // Fetch tide data from NOAA API
+        async function fetchTideData() {
+            showStatus('Loading tide data...', 'loading');
+            
+            try {
+                const apiUrl = buildApiUrl();
+                updateNoaaLink();
+                
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`API request failed with status ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(`API Error: ${data.error.message}`);
+                }
+                
+                const processed = processTideData(data);
+                currentData = processed.tableData;
+                csvData = processed.csvData;
+                
+                renderTable(currentData);
+                exportBtn.disabled = false;
+                hideStatus();
+                
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+                exportBtn.disabled = true;
+            }
+        }
+        
+        // Export data to CSV
+        function exportToCsv() {
+            if (!csvData) return;
+            
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const filename = `hudson_currents_${timestamp}.csv`;
+            
+            const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+            
+            // Create download link and trigger click
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // Show status message
+        function showStatus(message, type) {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            statusDiv.style.display = 'block';
+        }
+        
+        // Hide status message
+        function hideStatus() {
+            statusDiv.style.display = 'none';
+        }
+        
+        // Event Listeners
+        modeRadios.forEach(radio => {
+            radio.addEventListener('change', toggleInputMode);
+        });
+        
+        fetchBtn.addEventListener('click', fetchTideData);
+        exportBtn.addEventListener('click', exportToCsv);
+        
+        // Handle Enter key in inputs
+        [daysInput, startDateInput, endDateInput].forEach(input => {
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    fetchTideData();
+                }
+            });
+        });
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeDates();
+            updateNoaaLink();
+            fetchTideData(); // Auto-fetch on page load
+        });
+    </script>
+</body>
+</html>
