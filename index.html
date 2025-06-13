@@ -28,9 +28,10 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 15px;
             background: linear-gradient(to bottom right, var(--light-blue-1), var(--light-blue-4));
             min-height: 100vh;
+            font-size: 14px;
         }
 
         .container {
@@ -39,7 +40,7 @@
             background-color: white;
             border-radius: 10px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            padding: 25px;
+            padding: 15px;
             border: 1px solid var(--light-blue-5);
         }
 
@@ -47,13 +48,15 @@
             color: var(--ocean-blue-1);
             text-align: center;
             margin-bottom: 10px;
+            font-size: 22px;
         }
 
         .subtitle {
             color: var(--gray-1);
             text-align: center;
-            margin-bottom: 25px;
-            line-height: 1.5;
+            margin-bottom: 20px;
+            line-height: 1.4;
+            font-size: 13px;
         }
 
         a {
@@ -141,7 +144,7 @@
         /* Table Styles */
         .table-container {
             overflow-x: auto;
-            margin-top: 20px;
+            margin-top: 15px;
         }
 
         table {
@@ -150,6 +153,7 @@
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            font-size: 13px;
         }
 
         thead {
@@ -160,9 +164,10 @@
         }
 
         th {
-            padding: 12px 15px;
+            padding: 8px 10px;
             text-align: left;
             font-weight: 600;
+            font-size: 13px;
         }
 
         tbody tr:nth-child(even) {
@@ -178,7 +183,7 @@
         }
 
         td {
-            padding: 10px 15px;
+            padding: 8px 10px;
             border-bottom: 1px solid var(--light-blue-2);
         }
 
@@ -243,7 +248,9 @@
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .container {
-                padding: 15px;
+                padding: 10px;
+                width: 100%;
+                box-sizing: border-box;
             }
             
             .button-group {
@@ -253,6 +260,26 @@
             button {
                 width: 100%;
             }
+            
+            .controls {
+                padding: 15px;
+            }
+            
+            input[type="number"],
+            input[type="date"] {
+                width: 100%;
+                margin-top: 5px;
+                box-sizing: border-box;
+            }
+            
+            .input-group label {
+                display: block;
+                margin-bottom: 5px;
+            }
+            
+            .mode-selection label {
+                margin-right: 15px;
+            }
         }
     </style>
 </head>
@@ -261,7 +288,7 @@
         <h1>Hudson Current Predictions</h1>
         <div class="subtitle">
             <p>Approximate Hudson current speed near midtown Manhattan.</p>
-            <p>Based on the previous tide per <a href="https://api.tidesandcurrents.noaa.gov/api/prod/datagetter" target="_blank" id="noaa-link">NOAA Tide Predictions API</a> for The Battery, NY.</p>
+            <p>Based on the previous tide per <a href="https://api.tidesandcurrents.noaa.gov/api/prod/datagetter" target="_blank" id="noaa-link">NOAA Tide Predictions</a> for The Battery.</p>
         </div>
 
         <div class="controls">
@@ -301,9 +328,8 @@
                         <th>Date</th>
                         <th>Time</th>
                         <th>Tide</th>
-                        <th>Direction of current</th>
-                        <th>Speed (kts)</th>
-                        <th></th>
+                        <th>Direction</th>
+                        <th>Kts</th>
                     </tr>
                 </thead>
                 <tbody id="predictions-body">
@@ -493,7 +519,7 @@
                 
                 currents.forEach(current => {
                     const { dateStr, timeStr } = addHours(dateTime, current.hours);
-                    const tideLabel = `${tideType === 'H' ? 'HIGH' : 'LOW'}${current.hours > 0 ? '+' + current.hours : ''}`;
+                    const tideLabel = `${tideType === 'H' ? 'HIGH' : 'LOW'}${current.hours > 0 ? '+' + current.hours + 'h' : ''}`;
                     
                     const row = {
                         date: dateStr,
@@ -541,10 +567,7 @@
                 tr.appendChild(speedCell);
                 
                 // Add visualization cell with arrows
-                const vizCell = document.createElement('td');
-                vizCell.className = 'arrow-viz';
-                vizCell.innerHTML = generateArrows(row.speed, row.direction);
-                tr.appendChild(vizCell);
+                // Removed as requested
                 
                 predictionsBody.appendChild(tr);
             });
