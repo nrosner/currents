@@ -292,20 +292,7 @@
         </div>
 
         <div class="controls">
-            <div class="mode-selection">
-                <input type="radio" id="next-days" name="mode" value="nextDays" checked>
-                <label for="next-days">Next N days</label>
-                
-                <input type="radio" id="date-range" name="mode" value="dateRange">
-                <label for="date-range">Date range (from/to)</label>
-            </div>
-            
-            <div class="input-group" id="next-days-input">
-                <label for="days">Number of days:</label>
-                <input type="number" id="days" min="1" max="31" value="3">
-            </div>
-            
-            <div class="input-group" id="date-range-input" style="display: none;">
+            <div class="input-group" id="date-range-input">
                 <label for="start-date">From:</label>
                 <input type="date" id="start-date">
                 
@@ -341,10 +328,6 @@
 
     <script>
         // DOM Elements
-        const modeRadios = document.querySelectorAll('input[name="mode"]');
-        const nextDaysInput = document.getElementById('next-days-input');
-        const dateRangeInput = document.getElementById('date-range-input');
-        const daysInput = document.getElementById('days');
         const startDateInput = document.getElementById('start-date');
         const endDateInput = document.getElementById('end-date');
         const fetchBtn = document.getElementById('fetch-btn');
@@ -438,13 +421,7 @@
         
         // Toggle between input modes
         function toggleInputMode() {
-            if (document.getElementById('next-days').checked) {
-                nextDaysInput.style.display = 'block';
-                dateRangeInput.style.display = 'none';
-            } else {
-                nextDaysInput.style.display = 'none';
-                dateRangeInput.style.display = 'block';
-            }
+            // This function is no longer needed but kept for compatibility
         }
         
         // Build NOAA API URL based on selected parameters
@@ -461,16 +438,11 @@
                 application: 'NOS.COOPS.TAC.TidePred'
             });
             
-            // Add date parameters based on selected mode
-            if (document.getElementById('next-days').checked) {
-                const days = parseInt(daysInput.value) || 3;
-                params.append('range', 24 * days);
-            } else {
-                const startDate = startDateInput.value;
-                const endDate = endDateInput.value;
-                params.append('begin_date', startDate.replace(/-/g, ''));
-                params.append('end_date', endDate.replace(/-/g, ''));
-            }
+            // Add date parameters
+            const startDate = startDateInput.value;
+            const endDate = endDateInput.value;
+            params.append('begin_date', startDate.replace(/-/g, ''));
+            params.append('end_date', endDate.replace(/-/g, ''));
             
             return `${baseUrl}?${params.toString()}`;
         }
@@ -639,15 +611,11 @@
         }
         
         // Event Listeners
-        modeRadios.forEach(radio => {
-            radio.addEventListener('change', toggleInputMode);
-        });
-        
         fetchBtn.addEventListener('click', fetchTideData);
         exportBtn.addEventListener('click', exportToCsv);
         
         // Handle Enter key in inputs
-        [daysInput, startDateInput, endDateInput].forEach(input => {
+        [startDateInput, endDateInput].forEach(input => {
             input.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
                     fetchTideData();
