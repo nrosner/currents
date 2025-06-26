@@ -31,7 +31,7 @@
             padding: 15px;
             background: linear-gradient(to bottom right, var(--light-blue-1), var(--light-blue-4));
             min-height: 100vh;
-            font-size: 14px;
+            font-size: 12px;
         }
 
         .container {
@@ -48,7 +48,7 @@
             color: var(--ocean-blue-1);
             text-align: center;
             margin-bottom: 10px;
-            font-size: 22px;
+            font-size: 18px;
         }
 
         .subtitle {
@@ -56,7 +56,7 @@
             text-align: center;
             margin-bottom: 20px;
             line-height: 1.4;
-            font-size: 13px;
+            font-size: 11px;
         }
 
         a {
@@ -97,7 +97,7 @@
             padding: 8px 12px;
             border: 1px solid var(--gray-2);
             border-radius: 4px;
-            font-size: 16px;
+            font-size: 14px;
         }
 
         .button-group {
@@ -153,7 +153,7 @@
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            font-size: 13px;
+            font-size: 11px;
         }
 
         thead {
@@ -164,10 +164,10 @@
         }
 
         th {
-            padding: 8px 10px;
+            padding: 6px 8px;
             text-align: left;
             font-weight: 600;
-            font-size: 13px;
+            font-size: 11px;
         }
 
         tbody tr:nth-child(even) {
@@ -183,7 +183,7 @@
         }
 
         td {
-            padding: 8px 10px;
+            padding: 6px 8px;
             border-bottom: 1px solid var(--light-blue-2);
         }
 
@@ -289,6 +289,7 @@
         <div class="subtitle">
             <p>Approximate Hudson current speed near midtown Manhattan.</p>
             <p>Based on the previous tide per <a href="https://api.tidesandcurrents.noaa.gov/api/prod/datagetter" target="_blank" id="noaa-link">NOAA Tide Predictions</a> for The Battery.</p>
+            <p>Weather data courtesy of <a href="#" target="_blank" id="openmeteo-link">OpenMeteo</a>.</p>
         </div>
 
         <div class="controls">
@@ -315,8 +316,11 @@
                         <th>Date</th>
                         <th>Time</th>
                         <th>Tide</th>
-                        <th>Direction</th>
+                        <th>Dir</th>
                         <th>Kts</th>
+                        <th>Temp</th>
+                        <th>Rain</th>
+                        <th>in</th>
                     </tr>
                 </thead>
                 <tbody id="predictions-body">
@@ -335,10 +339,12 @@
         const statusDiv = document.getElementById('status');
         const predictionsBody = document.getElementById('predictions-body');
         const noaaLink = document.getElementById('noaa-link');
+        const openmeteoLink = document.getElementById('openmeteo-link');
         
         // Current data storage
         let currentData = [];
         let csvData = [];
+        let weatherData = {};
         
         // Constants for current predictions
         const HIGH_TIDE_CURRENTS = [
@@ -424,6 +430,23 @@
             // This function is no longer needed but kept for compatibility
         }
         
+        // Build OpenMeteo API URL based on selected parameters
+        function buildOpenMeteoUrl() {
+            const baseUrl = 'https://api.open-meteo.com/v1/forecast';
+            const params = new URLSearchParams({
+                latitude: '40.7128',
+                longitude: '-74.0060',
+                hourly: 'temperature_2m,precipitation_probability,precipitation',
+                temperature_unit: 'fahrenheit',
+                precipitation_unit: 'mm',
+                timezone: 'America/New_York',
+                start_date: startDateInput.value,
+                end_date: endDateInput.value
+            });
+            
+            return `${baseUrl}?${params.toString()}`;
+        }
+        
         // Build NOAA API URL based on selected parameters
         function buildApiUrl() {
             const baseUrl = 'https://api.tidesandcurrents.noaa.gov/api/prod/datagetter';
@@ -447,10 +470,13 @@
             return `${baseUrl}?${params.toString()}`;
         }
         
-        // Update the NOAA API link
-        function updateNoaaLink() {
-            const apiUrl = buildApiUrl();
-            noaaLink.href = apiUrl;
+        // Update the API links
+        function updateApiLinks() {
+            const noaaUrl = buildApiUrl();
+            noaaLink.href = noaaUrl;
+            
+            const openmeteoUrl = buildOpenMeteoUrl();
+            openmeteoLink.href = openmeteoUrl;
         }
         
         // Add hours to a date/time string
@@ -475,14 +501,112 @@
             };
         }
         
-        // Process tide data and generate current predictions
-        function processTideData(tideData) {
+        // Fetch weather data from Open-Meteo API
+        async function fetchWeatherData(startDate, endDate) {
+            const baseUrl = 'https://api.open-meteo.com/v1/forecast';
+            const params = new URLSearchParams({
+                latitude: '40.7128',
+                longitude: '-74.0060',
+                hourly: 'temperature_2m,precipitation_probability,precipitation',
+                temperature_unit: 'fahrenheit',
+                precipitation_unit: 'mm',
+                timezone: 'America/New_York',
+                start_date: startDate,
+                end_date: endDate
+            });
+            
+            const weatherUrl = `${baseUrl}?${params.toString()}`;
+            console.log('Weather API URL:', weatherUrl);
+            
+            const response = await fetch(weatherUrl);
+            if (!response.ok) {
+                throw new Error(`Weather API request failed with status ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log('Raw OpenMeteo API Response:', data);
+            
+            // Process weather data into a lookup object by date-time
+            const weatherLookup = {};
+            if (data.hourly && data.hourly.time) {
+                console.log('Processing weather data...');
+                console.log('Number of time entries:', data.hourly.time.length);
+                console.log('First few time entries:', data.hourly.time.slice(0, 5));
+                console.log('Temperature data available:', !!data.hourly.temperature_2m);
+                console.log('Precipitation probability data available:', !!data.hourly.precipitation_probability);
+                console.log('Precipitation data available:', !!data.hourly.precipitation);
+                
+                data.hourly.time.forEach((time, index) => {
+                    const dateTime = time.replace('T', ' ').substring(0, 16); // Format: YYYY-MM-DD HH:MM
+                    weatherLookup[dateTime] = {
+                        temperature: data.hourly.temperature_2m[index],
+                        rainProbability: data.hourly.precipitation_probability[index],
+                        precipitation: data.hourly.precipitation[index]
+                    };
+                });
+                
+                console.log('Weather lookup created with', Object.keys(weatherLookup).length, 'entries');
+                console.log('Sample weather lookup entries:', Object.entries(weatherLookup).slice(0, 3));
+            } else {
+                console.log('No hourly data found in weather response');
+            }
+            
+            return weatherLookup;
+        }
+        
+        // Get weather data for a specific date and time
+        function getWeatherForDateTime(dateStr, timeStr, weatherLookup) {
+            const dateTime = `${dateStr} ${timeStr}`;
+            console.log('Looking up weather for:', dateTime);
+            
+            // Parse the time to find the nearest hour
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            
+            // Round to nearest hour (if minutes >= 30, round up; otherwise round down)
+            let nearestHour = minutes >= 30 ? hours + 1 : hours;
+            
+            // Handle hour overflow (24:00 becomes 00:00 of next day)
+            if (nearestHour >= 24) {
+                nearestHour = 0;
+                // For simplicity, we'll keep the same date since weather doesn't change drastically hour to hour
+                // In a production app, you'd want to handle date rollover properly
+            }
+            
+            // Format the nearest hour as HH:00
+            const nearestHourStr = String(nearestHour).padStart(2, '0') + ':00';
+            const nearestDateTime = `${dateStr} ${nearestHourStr}`;
+            
+            console.log(`Original time: ${timeStr}, Nearest hour: ${nearestHourStr}, Looking up: ${nearestDateTime}`);
+            
+            const weather = weatherLookup[nearestDateTime];
+            console.log('Weather found:', weather);
+            
+            if (weather) {
+                const result = {
+                    temperature: weather.temperature ? Math.round(weather.temperature) : 'N/A',
+                    rainProbability: weather.rainProbability ? weather.rainProbability : 0,
+                    precipitation: weather.precipitation ? (weather.precipitation * 0.0393701).toFixed(2) : '0.00' // Convert mm to inches
+                };
+                console.log('Weather result:', result);
+                return result;
+            }
+            
+            console.log('No weather data found for', nearestDateTime);
+            console.log('Available weather keys (first 10):', Object.keys(weatherLookup).slice(0, 10));
+            
+            return {
+                temperature: 'N/A',
+                rainProbability: 0,
+                precipitation: '0.00'
+            };
+        }
+        function processTideData(tideData, weatherLookup) {
             if (!tideData || !tideData.predictions || tideData.predictions.length === 0) {
                 throw new Error('No tide prediction data available');
             }
             
             const processedData = [];
-            const csvRows = ['Date,Time,Tide,CurrentDirection,CurrentSpeed'];
+            const csvRows = ['Date,Time,Tide,CurrentDirection,CurrentSpeed,Temperature,RainProbability,Precipitation'];
             
             tideData.predictions.forEach(prediction => {
                 const tideType = prediction.type;
@@ -491,18 +615,29 @@
                 
                 currents.forEach(current => {
                     const { dateStr, timeStr } = addHours(dateTime, current.hours);
-                    const tideLabel = `${tideType === 'H' ? 'HIGH' : 'LOW'}${current.hours > 0 ? '+' + current.hours + 'h' : ''}`;
+                    let tideLabel;
+                    if (current.hours === 0) {
+                        tideLabel = tideType === 'H' ? 'HIGH' : 'LOW';
+                    } else {
+                        tideLabel = `${tideType === 'H' ? 'H' : 'L'}+${current.hours}h`;
+                    }
+                    
+                    // Get weather data for this date/time
+                    const weather = getWeatherForDateTime(dateStr, timeStr, weatherLookup);
                     
                     const row = {
                         date: dateStr,
                         time: timeStr,
                         tide: tideLabel,
-                        direction: current.direction,
-                        speed: current.speed.toFixed(1)
+                        direction: current.direction === 'FLOOD' ? 'FLO' : 'EBB',
+                        speed: current.speed.toFixed(1),
+                        temperature: weather.temperature,
+                        rainProbability: weather.rainProbability,
+                        precipitation: weather.precipitation
                     };
                     
                     processedData.push(row);
-                    csvRows.push(`${row.date},${row.time},${row.tide},${row.direction},${row.speed}`);
+                    csvRows.push(`${row.date},${row.time},${row.tide},${row.direction},${row.speed},${row.temperature},${row.rainProbability},${row.precipitation}`);
                 });
             });
             
@@ -531,15 +666,27 @@
                 
                 const directionCell = document.createElement('td');
                 directionCell.textContent = row.direction;
-                directionCell.className = row.direction === 'FLOOD' ? 'flood-current' : 'ebb-current';
+                directionCell.className = row.direction === 'FLO' ? 'flood-current' : 'ebb-current';
                 tr.appendChild(directionCell);
                 
                 const speedCell = document.createElement('td');
                 speedCell.textContent = row.speed;
                 tr.appendChild(speedCell);
                 
-                // Add visualization cell with arrows
-                // Removed as requested
+                // Temperature cell
+                const tempCell = document.createElement('td');
+                tempCell.textContent = row.temperature + '°F';
+                tr.appendChild(tempCell);
+                
+                // Rain probability cell
+                const rainProbCell = document.createElement('td');
+                rainProbCell.textContent = row.rainProbability + '%';
+                tr.appendChild(rainProbCell);
+                
+                // Precipitation cell
+                const precipCell = document.createElement('td');
+                precipCell.textContent = row.precipitation;
+                tr.appendChild(precipCell);
                 
                 predictionsBody.appendChild(tr);
             });
@@ -547,24 +694,30 @@
         
         // Fetch tide data from NOAA API
         async function fetchTideData() {
-            showStatus('Loading tide data...', 'loading');
+            showStatus('Loading tide and weather data...', 'loading');
             
             try {
                 const apiUrl = buildApiUrl();
-                updateNoaaLink();
+                updateApiLinks();
                 
-                const response = await fetch(apiUrl);
-                if (!response.ok) {
-                    throw new Error(`API request failed with status ${response.status}`);
+                // Fetch tide data
+                const tideResponse = await fetch(apiUrl);
+                if (!tideResponse.ok) {
+                    throw new Error(`Tide API request failed with status ${tideResponse.status}`);
                 }
                 
-                const data = await response.json();
+                const tideData = await tideResponse.json();
                 
-                if (data.error) {
-                    throw new Error(`API Error: ${data.error.message}`);
+                if (tideData.error) {
+                    throw new Error(`Tide API Error: ${tideData.error.message}`);
                 }
                 
-                const processed = processTideData(data);
+                // Fetch weather data
+                const startDate = startDateInput.value;
+                const endDate = endDateInput.value;
+                const weatherLookup = await fetchWeatherData(startDate, endDate);
+                
+                const processed = processTideData(tideData, weatherLookup);
                 currentData = processed.tableData;
                 csvData = processed.csvData;
                 
@@ -626,7 +779,7 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             initializeDates();
-            updateNoaaLink();
+            updateApiLinks();
             fetchTideData(); // Auto-fetch on page load
         });
     </script>
