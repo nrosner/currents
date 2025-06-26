@@ -287,7 +287,7 @@
     <div class="container">
         <h1>Hudson Current Predictions</h1>
         <div class="subtitle">
-            <p>Approximate Hudson current speed near midtown Manhattan, based on the previous tide per <a href="https://api.tidesandcurrents.noaa.gov/api/prod/datagetter" target="_blank" id="noaa-link">NOAA Tide Predictions</a> for The Battery, with weather data courtesy of <a href="#" target="_blank" id="openmeteo-link">OpenMeteo</a>.</p>
+            <p>Approximate Hudson current at midtown Manhattan, based on the previous tide per <a href="https://api.tidesandcurrents.noaa.gov/api/prod/datagetter" target="_blank" id="noaa-link">NOAA Tide Predictions</a> for The Battery. Weather data from <a href="#" target="_blank" id="openmeteo-link">OpenMeteo</a>.</p>
         </div>
 
         <div class="controls">
@@ -318,7 +318,6 @@
                         <th>Kts</th>
                         <th>Temp</th>
                         <th>Rain</th>
-                        <th>in</th>
                     </tr>
                 </thead>
                 <tbody id="predictions-body">
@@ -680,11 +679,6 @@
                 const rainProbCell = document.createElement('td');
                 rainProbCell.textContent = row.rainProbability + '%';
                 tr.appendChild(rainProbCell);
-                
-                // Precipitation cell
-                const precipCell = document.createElement('td');
-                precipCell.textContent = row.precipitation;
-                tr.appendChild(precipCell);
                 
                 predictionsBody.appendChild(tr);
             });
